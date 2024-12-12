@@ -31,6 +31,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
+fun AddTwoNumbers(a: Int, b: Int) {
+    Text(text = "A: $a, B: $b")
+}
+
+@Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
         text = "Hello $name!",
