@@ -1,11 +1,12 @@
 package com.example.baydesigns
 
 import android.os.Bundle
-import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -15,17 +16,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.baydesigns.features.CameraUtils
+import com.example.baydesigns.features.ColorPickerDialog
+import com.example.baydesigns.features.captureBitmap
 import com.example.baydesigns.ui.theme.BayDesignsTheme
 import com.google.ar.core.Config
+import io.github.sceneview.SceneView
 import io.github.sceneview.ar.ARScene
 import io.github.sceneview.ar.node.ArModelNode
 import io.github.sceneview.ar.node.ArNode
@@ -41,7 +46,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Box(modifier = Modifier.fillMaxSize()){
                         val currentModel = remember {
-                            mutableStateOf("plane")
+                            mutableStateOf("sofa")
                         }
                         ARScreen(currentModel.value)
                     }
@@ -53,49 +58,42 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ARScreen(model: String) {
-    val nodes = remember {
-        mutableListOf<ArNode>()
-    }
-    val modelNode = remember {
-        mutableStateOf<ArModelNode?>(null)
-    }
-    val placeModelButton = remember {
-        mutableStateOf(false)
-    }
+    val nodes = remember { mutableListOf<ArNode>() }
+    val modelNode = remember { mutableStateOf<ArModelNode?>(null) }
+    val arSceneView = remember { mutableStateOf<SceneView?>(null) }
+    val placeModelButton = remember { mutableStateOf(false) }
+    val showColorPicker = remember { mutableStateOf(false) }
+    val selectedColor = remember { mutableStateOf(Color.White) }
+
+    val context = LocalContext.current
+
     Box(modifier = Modifier.fillMaxSize()) {
         ARScene(
             modifier = Modifier.fillMaxSize(),
             nodes = nodes,
             planeRenderer = true,
-            onCreate = { arSceneView ->
-                arSceneView.lightEstimationMode = Config.LightEstimationMode.DISABLED
-                arSceneView.planeRenderer.isShadowReceiver = false
-                modelNode.value = ArModelNode(arSceneView.engine, PlacementMode.INSTANT).apply {
+            onCreate = { arSceneViewInstance ->
+                // Capture the ARSceneView reference
+                arSceneView.value = arSceneViewInstance
+
+                arSceneViewInstance.lightEstimationMode = Config.LightEstimationMode.DISABLED
+                arSceneViewInstance.planeRenderer.isShadowReceiver = false
+
+                modelNode.value = ArModelNode(arSceneViewInstance.engine, PlacementMode.INSTANT).apply {
                     loadModelGlbAsync(
                         glbFileLocation = "models/${model}.glb",
                         scaleToUnits = 0.8f
-                    ) {
-
-                    }
-                    onAnchorChanged = {
-                        placeModelButton.value = !isAnchored
-                    }
-                    onHitResult = { node, hitResult ->
-                        placeModelButton.value = node.isTracking
-                    }
-
+                    ) {}
+                    onAnchorChanged = { placeModelButton.value = !isAnchored }
+                    onHitResult = { node, _ -> placeModelButton.value = node.isTracking }
                 }
                 nodes.add(modelNode.value!!)
             },
-            onSessionCreate = {
-                planeRenderer.isVisible = false
-            }
+            onSessionCreate = { planeRenderer.isVisible = false }
         )
 
         if (placeModelButton.value) {
-            Button(onClick = {
-                modelNode.value?.anchor()
-            }, modifier = Modifier.align(Alignment.Center)) {
+            Button(onClick = { modelNode.value?.anchor() }, modifier = Modifier.align(Alignment.Center)) {
                 Text(text = "Place It")
             }
         }
@@ -118,14 +116,36 @@ fun ARScreen(model: String) {
                 Image(
                     painter = rgbCircleIcon,
                     contentDescription = "Change color icon",
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clickable { showColorPicker.value = true }
                 )
 
                 Icon(
                     imageVector = Icons.Default.Camera,
                     contentDescription = "Take a photo of your design",
                     tint = Color.Black,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clickable {
+                            // Access ARSceneView directly from the captured reference
+                            arSceneView.value?.let { sceneView ->
+                                sceneView.captureBitmap { bitmap ->
+                                    if (bitmap != null) {
+                                        val success = CameraUtils.saveImageToGallery(context, bitmap)
+                                        if (success) {
+                                            Toast.makeText(context, "Photo saved to gallery!", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, "Failed to save photo.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } else {
+                                        Toast.makeText(context, "Failed to capture image.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            } ?: run {
+                                Toast.makeText(context, "AR Scene is not ready.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                 )
 
                 Icon(
@@ -136,13 +156,12 @@ fun ARScreen(model: String) {
                 )
             }
         }
-    }
 
-    LaunchedEffect(key1 = model) {
-        modelNode.value?.loadModelGlbAsync(
-            glbFileLocation = "models/${model}.glb",
-            scaleToUnits = 0.8f
-        )
-        Log.e("errorloading", "ERROR LOADING MODEL")
+        if (showColorPicker.value) {
+            ColorPickerDialog(
+                onColorSelected = { selectedColor.value = it },
+                onDismiss = { showColorPicker.value = false }
+            )
+        }
     }
 }
