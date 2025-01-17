@@ -1,12 +1,8 @@
 package com.example.baydesigns.screens
-import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Camera
@@ -23,7 +19,6 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.example.baydesigns.R
 import com.example.baydesigns.SharedViewModel
-import com.example.baydesigns.ui.theme.BayDesignsTheme
 import com.google.ar.core.Config
 import io.github.sceneview.ar.ARScene
 import io.github.sceneview.ar.node.ArModelNode
@@ -32,8 +27,11 @@ import io.github.sceneview.ar.node.PlacementMode
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
+    val selectedTool by viewModel.selectedTool.collectAsState()
+
     Box(modifier = Modifier.fillMaxSize()) {
-        ARScreen(model = "plane")
+        ARScreen(model = selectedTool ?: "models/plane.glb")
+
 
         var expanded by remember { mutableStateOf(false) }
 
@@ -85,15 +83,10 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
 
 @Composable
 fun ARScreen(model: String) {
-    val nodes = remember {
-        mutableListOf<ArNode>()
-    }
-    val modelNode = remember {
-        mutableStateOf<ArModelNode?>(null)
-    }
-    val placeModelButton = remember {
-        mutableStateOf(false)
-    }
+    val nodes = remember { mutableListOf<ArNode>() }
+    val modelNode = remember { mutableStateOf<ArModelNode?>(null) }
+    val placeModelButton = remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         ARScene(
             modifier = Modifier.fillMaxSize(),
@@ -102,13 +95,8 @@ fun ARScreen(model: String) {
             onCreate = { arSceneView ->
                 arSceneView.lightEstimationMode = Config.LightEstimationMode.DISABLED
                 arSceneView.planeRenderer.isShadowReceiver = false
-                modelNode.value = ArModelNode(arSceneView.engine, PlacementMode.INSTANT).apply {
-                    loadModelGlbAsync(
-                        glbFileLocation = "models/${model}.glb",
-                        scaleToUnits = 0.8f
-                    ) {
 
-                    }
+                modelNode.value = ArModelNode(arSceneView.engine, PlacementMode.INSTANT).apply {
                     onAnchorChanged = {
                         placeModelButton.value = !isAnchored
                     }
@@ -170,11 +158,12 @@ fun ARScreen(model: String) {
         }
     }
 
-    LaunchedEffect(key1 = model) {
+    LaunchedEffect(model) {
         modelNode.value?.loadModelGlbAsync(
-            glbFileLocation = "models/${model}.glb",
+            glbFileLocation = model,
             scaleToUnits = 0.8f
-        )
-        Log.e("errorloading", "ERROR LOADING MODEL")
+        ) {
+            // Handle successful load
+        }
     }
 }

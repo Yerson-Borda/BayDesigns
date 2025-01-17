@@ -30,8 +30,8 @@ class MainActivity : ComponentActivity() {
                     composable("home") {
                         HomeScreen(navController, viewModel)
                     }
-                    composable("3dTools") { backStackEntry ->
-                        ThreeDToolsScreen(backStackEntry)
+                    composable("3dTools") {
+                        ThreeDToolsScreen(navController, viewModel)
                     }
                 }
             }

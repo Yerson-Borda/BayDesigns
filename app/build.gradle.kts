@@ -59,10 +59,12 @@ dependencies {
 
     // 3D SceneView
     implementation (libs.arsceneview)
+    implementation (libs.core)
 
     // Extended icons
     implementation (libs.androidx.material.icons.extended)
 
     //navigation
-    implementation ("androidx.navigation:navigation-compose:2.5.3")
+    implementation (libs.androidx.navigation.compose)
+
 }

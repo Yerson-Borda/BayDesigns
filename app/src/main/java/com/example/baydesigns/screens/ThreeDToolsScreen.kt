@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.baydesigns.SharedViewModel
 
@@ -34,10 +35,7 @@ data class ToolItem(
 )
 
 @Composable
-fun ThreeDToolsScreen(navBackStackEntry: NavBackStackEntry) {
-    val navController = rememberNavController()
-    val viewModel: SharedViewModel = viewModel()
-
+fun ThreeDToolsScreen(navController: NavController, viewModel: SharedViewModel) {
     val toolsList = listOf(
         ToolItem(1, "Plane", "3D Model", "models/plane.glb"),
         ToolItem(2, "Sofa", "Wallpaper", "models/sofa.glb")
@@ -58,8 +56,8 @@ fun ThreeDToolsScreen(navBackStackEntry: NavBackStackEntry) {
         }
         items(toolsList.filter { it.type == "3D Model" }) { tool ->
             ToolItemCard(tool) {
-                viewModel.selectTool(tool.resource) // Update the selected tool in the ViewModel
-                navController.popBackStack() // Navigate back to HomeScreen
+                viewModel.selectTool(tool.resource)
+                navController.popBackStack()
             }
         }
 
@@ -73,8 +71,8 @@ fun ThreeDToolsScreen(navBackStackEntry: NavBackStackEntry) {
         }
         items(toolsList.filter { it.type == "Wallpaper" }) { tool ->
             ToolItemCard(tool) {
-                viewModel.selectTool(tool.resource) // Update the selected tool in the ViewModel
-                navController.popBackStack() // Navigate back to HomeScreen
+                viewModel.selectTool(tool.resource)
+                navController.popBackStack()
             }
         }
     }
