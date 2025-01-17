@@ -59,4 +59,7 @@ dependencies {
 
     // 3D SceneView
     implementation (libs.arsceneview)
+
+    // Extended icons
+    implementation (libs.androidx.material.icons.extended)
 }
