@@ -45,7 +45,6 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
-                .zIndex(1f)
         ) {
             Icon(
                 imageVector = Icons.Default.MoreVert,
@@ -53,35 +52,37 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
             )
         }
 
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
+        Box(
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 56.dp, end = 16.dp)
-                .zIndex(2f)
+            .align(Alignment.TopEnd)
+            .padding(top = 75.dp, end = 16.dp)
         ) {
-            DropdownMenuItem(
-                onClick = {
-                    expanded = false
-                    navController.navigate("3dTools")
-                },
-                text = { Text("3D Tools") }
-            )
-            DropdownMenuItem(
-                onClick = {
-                    expanded = false
-                    // Handle Option 2 click
-                },
-                text = { Text("AI") }
-            )
-            DropdownMenuItem(
-                onClick = {
-                    expanded = false
-                    // Handle Option 3 click
-                },
-                text = { Text("Saved Designs") }
-            )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                DropdownMenuItem(
+                    onClick = {
+                        expanded = false
+                        navController.navigate("3dTools")
+                    },
+                    text = { Text("3D Items") }
+                )
+                DropdownMenuItem(
+                    onClick = {
+                        expanded = false
+                        // Handle Option 2 click
+                    },
+                    text = { Text("AI") }
+                )
+                DropdownMenuItem(
+                    onClick = {
+                        expanded = false
+                        // Handle Option 3 click
+                    },
+                    text = { Text("Saved Designs") }
+                )
+            }
         }
     }
 }
@@ -162,18 +163,39 @@ fun ARScreen(model: String) {
                             arSceneView.value?.let { sceneView ->
                                 sceneView.captureBitmap { bitmap ->
                                     if (bitmap != null) {
-                                        val success = CameraUtils.saveImageToGallery(context, bitmap)
+                                        val success =
+                                            CameraUtils.saveImageToGallery(context, bitmap)
                                         if (success) {
-                                            Toast.makeText(context, "Photo saved to gallery!", Toast.LENGTH_SHORT).show()
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Photo saved to gallery!",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
                                         } else {
-                                            Toast.makeText(context, "Failed to save photo.", Toast.LENGTH_SHORT).show()
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Failed to save photo.",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
                                         }
                                     } else {
-                                        Toast.makeText(context, "Failed to capture image.", Toast.LENGTH_SHORT).show()
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                "Failed to capture image.",
+                                                Toast.LENGTH_SHORT
+                                            )
+                                            .show()
                                     }
                                 }
                             } ?: run {
-                                Toast.makeText(context, "AR Scene is not ready.", Toast.LENGTH_SHORT).show()
+                                Toast
+                                    .makeText(context, "AR Scene is not ready.", Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         }
                 )

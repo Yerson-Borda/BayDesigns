@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,49 +36,71 @@ data class ToolItem(
     val resource: String // Path to the GLB file or wallpaper
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThreeDToolsScreen(navController: NavController, viewModel: SharedViewModel) {
     val toolsList = listOf(
-        ToolItem(1, "Plane", "3D Model", "models/plane.glb"),
-        ToolItem(2, "Sofa", "Wallpaper", "models/sofa.glb")
+        ToolItem(1, "Plane", "Wallpaper", "models/plane.glb"),
+        ToolItem(2, "Sofa", "Furniture", "models/sofa.glb"),
+        ToolItem(3, "table", "Furniture", "models/table.glb"),
+        ToolItem(4, "stove", "Furniture", "models/stove.glb")
     )
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // 3D Models Section
-        item {
-            Text(
-                text = "3D Models",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-        items(toolsList.filter { it.type == "3D Model" }) { tool ->
-            ToolItemCard(tool) {
-                viewModel.selectTool(tool.resource)
-                navController.popBackStack()
-            }
-        }
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Top Bar
+        androidx.compose.material3.TopAppBar(
+            title = { Text("3D Items") },
+            navigationIcon = {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    modifier = Modifier
+                        .clickable { navController.popBackStack() }
+                        .padding(8.dp)
+                )
+            },
+            modifier = Modifier.background(Color.White)
+        )
 
-        // Wallpapers Section
-        item {
-            Text(
-                text = "Wallpapers",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-        items(toolsList.filter { it.type == "Wallpaper" }) { tool ->
-            ToolItemCard(tool) {
-                viewModel.selectTool(tool.resource)
-                navController.popBackStack()
+        // Content below the Top Bar
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 64.dp) // Adjust for TopAppBar height
+        ) {
+            // 3D Models Section
+            item {
+                Text(
+                    text = "Wallpapers",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+            items(toolsList.filter { it.type == "Wallpaper" }) { tool ->
+                ToolItemCard(tool) {
+                    viewModel.selectTool(tool.resource)
+                    navController.popBackStack()
+                }
+            }
+
+            // Wallpapers Section
+            item {
+                Text(
+                    text = "Furniture",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+            items(toolsList.filter { it.type == "Furniture" }) { tool ->
+                ToolItemCard(tool) {
+                    viewModel.selectTool(tool.resource)
+                    navController.popBackStack()
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun ToolItemCard(tool: ToolItem, onClick: () -> Unit) {
