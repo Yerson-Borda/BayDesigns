@@ -1,7 +1,8 @@
 package com.example.baydesigns.screens
-import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -13,13 +14,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.example.baydesigns.R
 import com.example.baydesigns.SharedViewModel
+import com.example.baydesigns.features.CameraUtils
+import com.example.baydesigns.features.captureBitmap
 import com.google.ar.core.Config
+import io.github.sceneview.SceneView
 import io.github.sceneview.ar.ARScene
 import io.github.sceneview.ar.node.ArModelNode
 import io.github.sceneview.ar.node.ArNode
@@ -86,23 +91,28 @@ fun ARScreen(model: String) {
     val nodes = remember { mutableListOf<ArNode>() }
     val modelNode = remember { mutableStateOf<ArModelNode?>(null) }
     val placeModelButton = remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val arSceneView = remember { mutableStateOf<SceneView?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         ARScene(
             modifier = Modifier.fillMaxSize(),
             nodes = nodes,
             planeRenderer = true,
-            onCreate = { arSceneView ->
-                arSceneView.lightEstimationMode = Config.LightEstimationMode.DISABLED
-                arSceneView.planeRenderer.isShadowReceiver = false
+            onCreate = { arSceneViewInstance ->
+                // Capture the ARSceneView reference
+                arSceneView.value = arSceneViewInstance
 
-                modelNode.value = ArModelNode(arSceneView.engine, PlacementMode.INSTANT).apply {
-                    onAnchorChanged = {
-                        placeModelButton.value = !isAnchored
-                    }
-                    onHitResult = { node, hitResult ->
-                        placeModelButton.value = node.isTracking
-                    }
+                arSceneViewInstance.lightEstimationMode = Config.LightEstimationMode.DISABLED
+                arSceneViewInstance.planeRenderer.isShadowReceiver = false
+
+                modelNode.value = ArModelNode(arSceneViewInstance.engine, PlacementMode.INSTANT).apply {
+                    loadModelGlbAsync(
+                        glbFileLocation = "models/${model}.glb",
+                        scaleToUnits = 0.8f
+                    ) {}
+                    onAnchorChanged = { placeModelButton.value = !isAnchored }
+                    onHitResult = { node, _ -> placeModelButton.value = node.isTracking }
                 }
                 nodes.add(modelNode.value!!)
             },
@@ -145,7 +155,27 @@ fun ARScreen(model: String) {
                     imageVector = Icons.Default.Camera,
                     contentDescription = "Take a photo of your design",
                     tint = Color.Black,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clickable {
+                            // Access ARSceneView directly from the captured reference
+                            arSceneView.value?.let { sceneView ->
+                                sceneView.captureBitmap { bitmap ->
+                                    if (bitmap != null) {
+                                        val success = CameraUtils.saveImageToGallery(context, bitmap)
+                                        if (success) {
+                                            Toast.makeText(context, "Photo saved to gallery!", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, "Failed to save photo.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } else {
+                                        Toast.makeText(context, "Failed to capture image.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            } ?: run {
+                                Toast.makeText(context, "AR Scene is not ready.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                 )
 
                 Icon(
