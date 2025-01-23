@@ -3,13 +3,11 @@ package com.example.baydesigns
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.baydesigns.screens.ColorRecognitionScreen
 import com.example.baydesigns.screens.HomeScreen
 import com.example.baydesigns.screens.ThreeDToolsScreen
 import com.example.baydesigns.ui.theme.BayDesignsTheme
@@ -32,6 +30,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("3dTools") {
                         ThreeDToolsScreen(navController, viewModel)
+                    }
+                    composable("colorRecognition") {
+                        ColorRecognitionScreen(navController, viewModel)
                     }
                 }
             }

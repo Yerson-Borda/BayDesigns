@@ -11,8 +11,8 @@ class SharedViewModel : ViewModel() {
     val selectedTool: StateFlow<String?> get() = _selectedTool
 
     fun selectTool(tool: String) {
-        viewModelScope.launch {
-            _selectedTool.emit(tool)
-        }
+            viewModelScope.launch {
+                _selectedTool.emit(tool)
+            }
     }
 }

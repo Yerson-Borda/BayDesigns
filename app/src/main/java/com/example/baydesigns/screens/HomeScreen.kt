@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -54,8 +55,8 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
 
         Box(
             modifier = Modifier
-            .align(Alignment.TopEnd)
-            .padding(top = 75.dp, end = 16.dp)
+                .align(Alignment.TopEnd)
+                .padding(top = 75.dp, end = 16.dp)
         ) {
             DropdownMenu(
                 expanded = expanded,
@@ -88,12 +89,17 @@ fun HomeScreen(navController: NavController, viewModel: SharedViewModel) {
 }
 
 @Composable
-fun ARScreen(model: String) {
+fun ARScreen(
+    model: String,
+    wallColor: Color = Color.White // Add wallColor parameter with a default value
+) {
     val nodes = remember { mutableListOf<ArNode>() }
     val modelNode = remember { mutableStateOf<ArModelNode?>(null) }
     val placeModelButton = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val arSceneView = remember { mutableStateOf<SceneView?>(null) }
+    val showColorPalette = remember { mutableStateOf(false) } // State for color palette visibility
+    val selectedColor = remember { mutableStateOf<Color?>(null) } // State for selected color
 
     Box(modifier = Modifier.fillMaxSize()) {
         ARScene(
@@ -111,7 +117,12 @@ fun ARScreen(model: String) {
                     loadModelGlbAsync(
                         glbFileLocation = "models/${model}.glb",
                         scaleToUnits = 0.8f
-                    ) {}
+                    ) {
+                        // Apply the selected color to the model's material
+                        selectedColor.value?.let { color ->
+                            applyMaterialColor(color)
+                        }
+                    }
                     onAnchorChanged = { placeModelButton.value = !isAnchored }
                     onHitResult = { node, _ -> placeModelButton.value = node.isTracking }
                 }
@@ -144,14 +155,19 @@ fun ARScreen(model: String) {
                     .background(Color(0xFF878080)),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
+                // RGB Circle Icon to Show Color Palette
                 val rgbCircleIcon: Painter = painterResource(id = R.drawable.rgb_circle)
-
                 Image(
                     painter = rgbCircleIcon,
                     contentDescription = "Change color icon",
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clickable {
+                            showColorPalette.value = !showColorPalette.value // Toggle color palette visibility
+                        }
                 )
 
+                // Camera Icon
                 Icon(
                     imageVector = Icons.Default.Camera,
                     contentDescription = "Take a photo of your design",
@@ -159,47 +175,26 @@ fun ARScreen(model: String) {
                     modifier = Modifier
                         .size(48.dp)
                         .clickable {
-                            // Access ARSceneView directly from the captured reference
                             arSceneView.value?.let { sceneView ->
                                 sceneView.captureBitmap { bitmap ->
                                     if (bitmap != null) {
-                                        val success =
-                                            CameraUtils.saveImageToGallery(context, bitmap)
+                                        val success = CameraUtils.saveImageToGallery(context, bitmap)
                                         if (success) {
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    "Photo saved to gallery!",
-                                                    Toast.LENGTH_SHORT
-                                                )
-                                                .show()
+                                            Toast.makeText(context, "Photo saved to gallery!", Toast.LENGTH_SHORT).show()
                                         } else {
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    "Failed to save photo.",
-                                                    Toast.LENGTH_SHORT
-                                                )
-                                                .show()
+                                            Toast.makeText(context, "Failed to save photo.", Toast.LENGTH_SHORT).show()
                                         }
                                     } else {
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                "Failed to capture image.",
-                                                Toast.LENGTH_SHORT
-                                            )
-                                            .show()
+                                        Toast.makeText(context, "Failed to capture image.", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             } ?: run {
-                                Toast
-                                    .makeText(context, "AR Scene is not ready.", Toast.LENGTH_SHORT)
-                                    .show()
+                                Toast.makeText(context, "AR Scene is not ready.", Toast.LENGTH_SHORT).show()
                             }
                         }
                 )
 
+                // More Options Icon
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "More options",
@@ -208,14 +203,90 @@ fun ARScreen(model: String) {
                 )
             }
         }
+
+        // Show Color Palette if Visible
+        if (showColorPalette.value) {
+            ColorPalette(
+                onColorSelected = { color ->
+                    selectedColor.value = color
+                    showColorPalette.value = false // Hide the palette after selection
+                    modelNode.value?.applyMaterialColor(color) // Update the wall color
+                },
+                onDismiss = { showColorPalette.value = false }
+            )
+        }
     }
 
-    LaunchedEffect(model) {
+    LaunchedEffect(model, selectedColor.value) { // Add selectedColor as a key to recompose when it changes
         modelNode.value?.loadModelGlbAsync(
             glbFileLocation = model,
             scaleToUnits = 0.8f
         ) {
-            // Handle successful load
+            // Apply the selected color to the model's material
+            selectedColor.value?.let { color ->
+                modelNode.value?.applyMaterialColor(color)
+            }
         }
+    }
+}
+
+@Composable
+fun ColorPalette(
+    onColorSelected: (Color) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val colors = listOf(
+        Color.Red,
+        Color.Green,
+        Color.Blue,
+        Color.Yellow,
+        Color.Cyan,
+        Color.Magenta,
+        Color.Gray,
+        Color.White,
+        Color.Black
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White.copy(alpha = 0.9f))
+            .padding(16.dp)
+    ) {
+        Column {
+            Text(
+                text = "Select a Color",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                colors.forEach { color ->
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(color)
+                            .clickable {
+                                onColorSelected(color)
+                            }
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text("Close")
+            }
+        }
+    }
+}
+
+fun ArModelNode.applyMaterialColor(color: Color) {
+    this.modelInstance?.getMaterialInstances()?.forEach { materialInstance ->
+        materialInstance.setParameter("baseColorFactor", color.toArgb())
     }
 }

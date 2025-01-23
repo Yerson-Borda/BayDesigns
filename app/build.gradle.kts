@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.baydesigns"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.baydesigns"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -60,11 +60,26 @@ dependencies {
     // 3D SceneView
     implementation (libs.arsceneview)
     implementation (libs.core)
+//    implementation ("com.google.ar.sceneform:core:1.17.1")
+//    implementation ("com.google.ar.sceneform.ux:sceneform-ux:1.17.1")
+//    implementation ("com.google.ar.sceneform.ux:sceneform-ux:1.17.1") // Check for the latest version
 
     // Extended icons
     implementation (libs.androidx.material.icons.extended)
 
     //navigation
     implementation (libs.androidx.navigation.compose)
+
+    // CameraX
+    implementation ("androidx.camera:camera-core:1.4.1")
+    implementation ("androidx.camera:camera-camera2:1.4.1")
+    implementation ("androidx.camera:camera-lifecycle:1.4.1")
+    implementation ("androidx.camera:camera-view:1.4.1")
+
+
+  //Plette
+    implementation ("androidx.palette:palette-ktx:1.0.0")
+    // AndroidX
+    implementation ("androidx.lifecycle:lifecycle-common-java8:2.8.7")
 
 }
